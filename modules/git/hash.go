@@ -25,6 +25,9 @@ const (
 // sha1Pattern can be used to determine if a string is an valid sha
 var sha1Pattern = regexp.MustCompile(`^[0-9a-f]{4,40}$`)
 
+// sha256Pattern can be used to determine if a string is an valid sha
+var sha256Pattern = regexp.MustCompile(`^[0-9a-f]{4,64}$`)
+
 type HashTypeInterface interface {
 	IsZero() bool
 	RawValue() []byte
@@ -54,6 +57,12 @@ func HashTypeInterfaceFromHashString(hexHash string) (HashTypeInterface, error) 
 	switch len(hexHash) {
 	case 40:
 		h := NewSha1()
+		if _, err := h.NewIDFromString(hexHash); err != nil {
+			return nil, err
+		}
+		return h, nil
+	case 64:
+		h := NewSha256()
 		if _, err := h.NewIDFromString(hexHash); err != nil {
 			return nil, err
 		}
@@ -111,12 +120,68 @@ func NewSha1() *Sha1Hash {
 	return &Sha1Hash{}
 }
 
+type Sha256Hash struct {
+	val [32]byte
+}
+
+func (h *Sha256Hash) RawValue() []byte { return h.val[:] }
+func (h *Sha256Hash) IsZero() bool {
+	empty := Sha256Hash{}
+	return bytes.Equal(empty.val[:], h.val[:])
+}
+
+func (h *Sha256Hash) String() string {
+	return hex.EncodeToString(h.val[:])
+}
+func (*Sha256Hash) Type() HashType       { return Sha256 }
+func (*Sha256Hash) ToTypeString() string { return "sha256" }
+func (*Sha256Hash) Empty() string        { return "000000000000000000000000000000000000000000000000000" }
+func (*Sha256Hash) EmptyTree() string {
+	return "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321"
+}
+func (*Sha256Hash) FullLength() int { return 64 }
+func (*Sha256Hash) IsValid(input string) bool {
+	return sha256Pattern.MatchString(input)
+}
+
+func (*Sha256Hash) MustID(b []byte) HashTypeInterface {
+	var id Sha256Hash
+	copy(id.val[0:32], b)
+	return &id
+}
+
+func (h *Sha256Hash) MustIDFromString(s string) HashTypeInterface {
+	return hashTypeMustIDFromString(h, s)
+}
+
+func (h *Sha256Hash) NewID(b []byte) (HashTypeInterface, error) {
+	return hashTypeNewID(h, b)
+}
+
+func (h *Sha256Hash) NewIDFromString(s string) (HashTypeInterface, error) {
+	return hashTypeNewIDFromString(h, s)
+}
+
+func (*Sha256Hash) NewEmptyID() HashTypeInterface {
+	return NewSha1()
+}
+
+func (h *Sha256Hash) NewHasher() HasherInterface {
+	return &Sha256Hasher{sha1.New()}
+}
+
+func NewSha256() *Sha256Hash {
+	return &Sha256Hash{}
+}
+
 // generic implementations
 func NewHashTypeInterface(hash string) (HashTypeInterface, error) {
 	hash = strings.ToLower(hash)
 	switch hash {
 	case "sha1":
 		return &Sha1Hash{}, nil
+	case "sha256":
+		return &Sha256Hash{}, nil
 	}
 
 	return nil, errors.New("unsupported hash type")
@@ -146,7 +211,7 @@ func hashTypeNewIDFromString(h HashTypeInterface, s string) (HashTypeInterface, 
 	return h.NewID(b)
 }
 
-// Sha1Hasher is a struct that will generate a HashTypeInterface
+// HashInterface is a struct that will generate a HashTypeInterface
 type HasherInterface interface {
 	hash.Hash
 
@@ -154,6 +219,9 @@ type HasherInterface interface {
 }
 
 type Sha1Hasher struct {
+	hash.Hash
+}
+type Sha256Hasher struct {
 	hash.Hash
 }
 
@@ -177,6 +245,13 @@ func (h *Sha1Hasher) HashSum() HashTypeInterface {
 	var sha1 Sha1Hash
 	copy(sha1.val[:], h.Hash.Sum(nil))
 	return &sha1
+}
+
+// Sum generates a SHA256 for the provided hash
+func (h *Sha256Hasher) HashSum() HashTypeInterface {
+	var sha256 Sha256Hash
+	copy(sha256.val[:], h.Hash.Sum(nil))
+	return &sha256
 }
 
 type ErrInvalidSHA struct {
