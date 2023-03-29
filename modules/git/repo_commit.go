@@ -6,8 +6,6 @@ package git
 
 import (
 	"bytes"
-	"encoding/hex"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -28,7 +26,7 @@ func (repo *Repository) GetTagCommitID(name string) (string, error) {
 
 // GetCommit returns commit object of by ID string.
 func (repo *Repository) GetCommit(commitID string) (*Commit, error) {
-	id, err := repo.ConvertToSHA1(commitID)
+	id, err := repo.ConvertToGitHash(commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +52,7 @@ func (repo *Repository) GetTagCommit(name string) (*Commit, error) {
 	return repo.GetCommit(commitID)
 }
 
-func (repo *Repository) getCommitByPathWithID(id SHA1, relpath string) (*Commit, error) {
+func (repo *Repository) getCommitByPathWithID(id HashTypeInterface, relpath string) (*Commit, error) {
 	// File name starts with ':' must be escaped.
 	if relpath[0] == ':' {
 		relpath = `\` + relpath
@@ -65,7 +63,7 @@ func (repo *Repository) getCommitByPathWithID(id SHA1, relpath string) (*Commit,
 		return nil, runErr
 	}
 
-	id, err := NewIDFromString(stdout)
+	id, err := repo.Hash.NewIDFromString(stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +88,7 @@ func (repo *Repository) GetCommitByPath(relpath string) (*Commit, error) {
 	return commits[0], nil
 }
 
-func (repo *Repository) commitsByRange(id SHA1, page, pageSize int, not string) ([]*Commit, error) {
+func (repo *Repository) commitsByRange(id HashTypeInterface, page, pageSize int, not string) ([]*Commit, error) {
 	cmd := NewCommand(repo.Ctx, "log").
 		AddOptionFormat("--skip=%d", (page-1)*pageSize).
 		AddOptionFormat("--max-count=%d", pageSize).
@@ -109,7 +107,7 @@ func (repo *Repository) commitsByRange(id SHA1, page, pageSize int, not string) 
 	return repo.parsePrettyFormatLogToList(stdout)
 }
 
-func (repo *Repository) searchCommits(id SHA1, opts SearchCommitsOptions) ([]*Commit, error) {
+func (repo *Repository) searchCommits(id HashTypeInterface, opts SearchCommitsOptions) ([]*Commit, error) {
 	// add common arguments to git command
 	addCommonSearchArgs := func(c *Command) {
 		// ignore case
@@ -171,7 +169,7 @@ func (repo *Repository) searchCommits(id SHA1, opts SearchCommitsOptions) ([]*Co
 	if len(opts.Keywords) > 0 {
 		for _, v := range opts.Keywords {
 			// ignore anything not matching a valid sha pattern
-			if IsValidSHAPattern(v) {
+			if id.IsValid(v) {
 				// create new git log command with 1 commit limit
 				hashCmd := NewCommand(repo.Ctx, "log", "-1", prettyLogFormat)
 				// add previous arguments except for --grep and --all
@@ -253,25 +251,22 @@ func (repo *Repository) CommitsByFileAndRange(opts CommitsByFileAndRangeOptions)
 		}
 	}()
 
+	hashLen := repo.Hash.FullLength()
 	commits := []*Commit{}
-	shaline := [41]byte{}
-	var sha1 SHA1
+	shaline := make([]byte, hashLen+1)
 	for {
-		n, err := io.ReadFull(stdoutReader, shaline[:])
-		if err != nil || n < 40 {
+		n, err := io.ReadFull(stdoutReader, shaline)
+		if err != nil || n < hashLen {
 			if err == io.EOF {
 				err = nil
 			}
 			return commits, err
 		}
-		n, err = hex.Decode(sha1[:], shaline[0:40])
-		if n != 20 {
-			err = fmt.Errorf("invalid sha %q", string(shaline[:40]))
-		}
+		hash, err := repo.Hash.NewIDFromString(string(shaline[0:hashLen]))
 		if err != nil {
 			return nil, err
 		}
-		commit, err := repo.getCommit(sha1)
+		commit, err := repo.getCommit(hash)
 		if err != nil {
 			return nil, err
 		}
@@ -400,7 +395,7 @@ func (repo *Repository) CommitsCountBetween(start, end string) (int64, error) {
 }
 
 // commitsBefore the limit is depth, not total number of returned commits.
-func (repo *Repository) commitsBefore(id SHA1, limit int) ([]*Commit, error) {
+func (repo *Repository) commitsBefore(id HashTypeInterface, limit int) ([]*Commit, error) {
 	cmd := NewCommand(repo.Ctx, "log", prettyLogFormat)
 	if limit > 0 {
 		cmd.AddOptionFormat("-%d", limit)
@@ -434,11 +429,11 @@ func (repo *Repository) commitsBefore(id SHA1, limit int) ([]*Commit, error) {
 	return commits, nil
 }
 
-func (repo *Repository) getCommitsBefore(id SHA1) ([]*Commit, error) {
+func (repo *Repository) getCommitsBefore(id HashTypeInterface) ([]*Commit, error) {
 	return repo.commitsBefore(id, 0)
 }
 
-func (repo *Repository) getCommitsBeforeLimit(id SHA1, num int) ([]*Commit, error) {
+func (repo *Repository) getCommitsBeforeLimit(id HashTypeInterface, num int) ([]*Commit, error) {
 	return repo.commitsBefore(id, num)
 }
 

@@ -151,7 +151,7 @@ func TestCommitToPushCommit(t *testing.T) {
 		When:  now,
 	}
 	const hexString = "0123456789abcdef0123456789abcdef01234567"
-	sha1, err := git.NewIDFromString(hexString)
+	sha1, err := git.NewSha1().NewIDFromString(hexString)
 	assert.NoError(t, err)
 	pushCommit := CommitToPushCommit(&git.Commit{
 		ID:            sha1,
@@ -176,11 +176,12 @@ func TestListToPushCommits(t *testing.T) {
 		When:  now,
 	}
 
+	hash := git.NewSha1()
 	const hexString1 = "0123456789abcdef0123456789abcdef01234567"
-	hash1, err := git.NewIDFromString(hexString1)
+	hash1, err := hash.NewIDFromString(hexString1)
 	assert.NoError(t, err)
 	const hexString2 = "fedcba9876543210fedcba9876543210fedcba98"
-	hash2, err := git.NewIDFromString(hexString2)
+	hash2, err := hash.NewIDFromString(hexString2)
 	assert.NoError(t, err)
 
 	l := []*git.Commit{

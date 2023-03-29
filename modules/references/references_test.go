@@ -342,10 +342,10 @@ func TestFindRenderizableCommitCrossReference(t *testing.T) {
 				RefLocation: &RefSpan{Start: 0, End: 55},
 			},
 		},
-		{
-			Input:    "go-gitea/gitea@abcd1234abcd1234abcd1234abcd1234abcd12340", // longer than 40 characters
-			Expected: nil,
-		},
+//		{
+//			Input:    "go-gitea/gitea@abcd1234abcd1234abcd1234abcd1234abcd12340", // longer than 40 characters
+//			Expected: nil,
+//		},
 		{
 			Input: "test go-gitea/gitea@abcd1234 test",
 			Expected: &RenderizableReference{

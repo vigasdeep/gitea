@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/hash"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -38,12 +39,13 @@ func (repo *Repository) RemoveReference(name string) error {
 	return repo.gogitRepo.Storer.RemoveReference(plumbing.ReferenceName(name))
 }
 
-// ConvertToSHA1 returns a Hash object from a potential ID string
-func (repo *Repository) ConvertToSHA1(commitID string) (SHA1, error) {
-	if len(commitID) == SHAFullLength {
-		sha1, err := NewIDFromString(commitID)
+// ConvertToHash returns a Hash object from a potential ID string
+func (repo *Repository) ConvertToGitHash(commitID string) (HashTypeInterface, error) {
+	h := defaultHashType()
+	if len(commitID) == hash.HexSize {
+		hash, err := h.NewIDFromString(commitID)
 		if err == nil {
-			return sha1, nil
+			return hash, nil
 		}
 	}
 
@@ -51,12 +53,12 @@ func (repo *Repository) ConvertToSHA1(commitID string) (SHA1, error) {
 	if err != nil {
 		if strings.Contains(err.Error(), "unknown revision or path") ||
 			strings.Contains(err.Error(), "fatal: Needed a single revision") {
-			return SHA1{}, ErrNotExist{commitID, ""}
+			return h, ErrNotExist{commitID, ""}
 		}
-		return SHA1{}, err
+		return h, err
 	}
 
-	return NewIDFromString(actualCommitID)
+	return HashTypeInterfaceFromHashString(actualCommitID)
 }
 
 // IsCommitExist returns true if given commit exists in current repository.
@@ -66,12 +68,13 @@ func (repo *Repository) IsCommitExist(name string) bool {
 	return err == nil
 }
 
-func (repo *Repository) getCommit(id SHA1) (*Commit, error) {
+func (repo *Repository) getCommit(id HashTypeInterface) (*Commit, error) {
 	var tagObject *object.Tag
 
-	gogitCommit, err := repo.gogitRepo.CommitObject(id)
+	hash := plumbing.Hash(id.RawValue())
+	gogitCommit, err := repo.gogitRepo.CommitObject(hash)
 	if err == plumbing.ErrObjectNotFound {
-		tagObject, err = repo.gogitRepo.TagObject(id)
+		tagObject, err = repo.gogitRepo.TagObject(hash)
 		if err == plumbing.ErrObjectNotFound {
 			return nil, ErrNotExist{
 				ID: id.String(),
@@ -94,7 +97,7 @@ func (repo *Repository) getCommit(id SHA1) (*Commit, error) {
 		return nil, err
 	}
 
-	commit.Tree.ID = tree.Hash
+	commit.Tree.ID = ParseGogitHash(tree.Hash)
 	commit.Tree.gogitTree = tree
 
 	return commit, nil

@@ -11,12 +11,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/hash"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // ParseTreeEntries parses the output of a `git ls-tree -l` command.
-func ParseTreeEntries(data []byte) ([]*TreeEntry, error) {
+func ParseTreeEntries(h HashTypeInterface, data []byte) ([]*TreeEntry, error) {
 	return parseTreeEntries(data, nil)
 }
 
@@ -50,15 +52,15 @@ func parseTreeEntries(data []byte, ptree *Tree) ([]*TreeEntry, error) {
 			return nil, fmt.Errorf("unknown type: %v", string(data[pos:pos+6]))
 		}
 
-		if pos+40 > len(data) {
+		if pos+hash.Size > len(data) {
 			return nil, fmt.Errorf("Invalid ls-tree output: %s", string(data))
 		}
-		id, err := NewIDFromString(string(data[pos : pos+40]))
+		id, err := HashTypeInterfaceFromHashString(string(data[pos : pos+hash.Size]))
 		if err != nil {
 			return nil, fmt.Errorf("Invalid ls-tree output: %w", err)
 		}
 		entry.ID = id
-		entry.gogitTreeEntry.Hash = id
+		entry.gogitTreeEntry.Hash = plumbing.Hash(id.RawValue())
 		pos += 41 // skip over sha and trailing space
 
 		end := pos + bytes.IndexByte(data[pos:], '\t')
