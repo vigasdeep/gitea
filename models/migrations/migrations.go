@@ -534,6 +534,8 @@ var migrations = []Migration{
 	NewMigration("Add ScheduleID for ActionRun", v1_21.AddScheduleIDForActionRun),
 	// v276 -> v277
 	NewMigration("Add RemoteAddress to mirrors", v1_21.AddRemoteAddressToMirrors),
+	// v277 -> v278
+	NewMigration("Add support for SHA256 git hash references", v1_21.ExpandHashReferencesToSha256),
 }
 
 // GetCurrentDBVersion returns the current db version
