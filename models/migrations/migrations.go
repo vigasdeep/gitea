@@ -540,6 +540,8 @@ var migrations = []Migration{
 	NewMigration("Add Index to comment.dependent_issue_id", v1_21.AddIndexToCommentDependentIssueID),
 	// v279 -> v280
 	NewMigration("Add Index to action.user_id", v1_21.AddIndexToActionUserID),
+	// v280 -> v281
+	NewMigration("Add support for SHA256 git hash references", v1_21.ExpandHashReferencesToSha256),
 }
 
 // GetCurrentDBVersion returns the current db version

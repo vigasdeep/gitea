@@ -51,6 +51,7 @@ type CreateRepoForm struct {
 	Labels          bool
 	ProtectedBranch bool
 	TrustModel      string
+	HashType        string
 }
 
 // Validate validates the fields
