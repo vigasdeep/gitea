@@ -12,8 +12,8 @@ import (
 
 // Tree represents a flat directory listing.
 type Tree struct {
-	ID         SHA1
-	ResolvedID SHA1
+	ID         ObjectID
+	ResolvedID ObjectID
 	repo       *Repository
 
 	// parent tree
@@ -53,7 +53,7 @@ func (t *Tree) ListEntries() (Entries, error) {
 			}
 		}
 		if typ == "tree" {
-			t.entries, err = catBatchParseTreeEntries(t, rd, sz)
+			t.entries, err = catBatchParseTreeEntries(t.ID.Type(), t, rd, sz)
 			if err != nil {
 				return nil, err
 			}
@@ -78,7 +78,7 @@ func (t *Tree) ListEntries() (Entries, error) {
 	}
 
 	var err error
-	t.entries, err = parseTreeEntries(stdout, t)
+	t.entries, err = parseTreeEntries(t.repo.objectFormat, stdout, t)
 	if err == nil {
 		t.entriesParsed = true
 	}
@@ -102,7 +102,7 @@ func (t *Tree) listEntriesRecursive(extraArgs TrustedCmdArgs) (Entries, error) {
 	}
 
 	var err error
-	t.entriesRecursive, err = parseTreeEntries(stdout, t)
+	t.entriesRecursive, err = parseTreeEntries(t.repo.objectFormat, stdout, t)
 	if err == nil {
 		t.entriesRecursiveParsed = true
 	}

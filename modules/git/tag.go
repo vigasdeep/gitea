@@ -19,8 +19,8 @@ const (
 // Tag represents a Git tag.
 type Tag struct {
 	Name      string
-	ID        SHA1
-	Object    SHA1 // The id of this commit object
+	ID        ObjectID
+	Object    ObjectID // The id of this commit object
 	Type      string
 	Tagger    *Signature
 	Message   string
@@ -35,8 +35,10 @@ func (tag *Tag) Commit(gitRepo *Repository) (*Commit, error) {
 // Parse commit information from the (uncompressed) raw
 // data from the commit object.
 // \n\n separate headers from message
-func parseTagData(data []byte) (*Tag, error) {
+func parseTagData(objectFormat ObjectFormat, data []byte) (*Tag, error) {
 	tag := new(Tag)
+	tag.ID = objectFormat.NewEmptyID()
+	tag.Object = objectFormat.NewEmptyID()
 	tag.Tagger = &Signature{}
 	// we now have the contents of the commit object. Let's investigate...
 	nextline := 0
@@ -50,7 +52,7 @@ l:
 			reftype := line[:spacepos]
 			switch string(reftype) {
 			case "object":
-				id, err := NewIDFromString(string(line[spacepos+1:]))
+				id, err := objectFormat.NewIDFromString(string(line[spacepos+1:]))
 				if err != nil {
 					return nil, err
 				}
