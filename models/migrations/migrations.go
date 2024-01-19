@@ -20,6 +20,7 @@ import (
 	"code.gitea.io/gitea/models/migrations/v1_19"
 	"code.gitea.io/gitea/models/migrations/v1_20"
 	"code.gitea.io/gitea/models/migrations/v1_21"
+	"code.gitea.io/gitea/models/migrations/v1_22"
 	"code.gitea.io/gitea/models/migrations/v1_6"
 	"code.gitea.io/gitea/models/migrations/v1_7"
 	"code.gitea.io/gitea/models/migrations/v1_8"
@@ -540,6 +541,8 @@ var migrations = []Migration{
 	NewMigration("Add Index to comment.dependent_issue_id", v1_21.AddIndexToCommentDependentIssueID),
 	// v279 -> v280
 	NewMigration("Add Index to action.user_id", v1_21.AddIndexToActionUserID),
+	// v280 -> v281
+	NewMigration("Add support for SHA256 git repositories", v1_22.AdjustDBForSha256),
 }
 
 // GetCurrentDBVersion returns the current db version
