@@ -97,7 +97,7 @@ func CreateCommitStatus(ctx context.Context, repo *repo_model.Repository, creato
 	if err := git_model.NewCommitStatus(ctx, git_model.NewCommitStatusOptions{
 		Repo:         repo,
 		Creator:      creator,
-		SHA:          sha,
+		SHA:          commit.ID,
 		CommitStatus: status,
 	}); err != nil {
 		return fmt.Errorf("NewCommitStatus[repo_id: %d, user_id: %d, sha: %s]: %w", repo.ID, creator.ID, sha, err)

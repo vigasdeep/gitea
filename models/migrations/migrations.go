@@ -20,7 +20,6 @@ import (
 	"code.gitea.io/gitea/models/migrations/v1_19"
 	"code.gitea.io/gitea/models/migrations/v1_20"
 	"code.gitea.io/gitea/models/migrations/v1_21"
-	"code.gitea.io/gitea/models/migrations/v1_22"
 	"code.gitea.io/gitea/models/migrations/v1_6"
 	"code.gitea.io/gitea/models/migrations/v1_7"
 	"code.gitea.io/gitea/models/migrations/v1_8"
