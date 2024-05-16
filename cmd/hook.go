@@ -377,7 +377,11 @@ Gitea or set your environment appropriately.`, "")
 		newCommitIDs[count] = string(fields[1])
 		refFullNames[count] = git.RefName(fields[2])
 
-		commitID, _ := git.NewIDFromString(newCommitIDs[count])
+		commitID, err := git.NewIDFromString(newCommitIDs[count])
+		if err != nil {
+			return fail(ctx, "CommitID parsing failed", "%w", err)
+		}
+
 		if refFullNames[count] == git.BranchPrefix+"master" && !commitID.IsZero() && count == total {
 			masterPushed = true
 		}
