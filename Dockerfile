@@ -8,7 +8,8 @@ ARG GITEA_VERSION
 ARG TAGS="sqlite sqlite_unlock_notify"
 ENV TAGS "bindata timetzdata $TAGS"
 ARG CGO_EXTRA_CFLAGS
-
+# updated git install
+RUN add-apt-repository ppa:git-core/ppa && apt-get update && apt-get install -y git 
 # Build deps
 RUN apk --no-cache add \
     build-base \
